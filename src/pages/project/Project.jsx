@@ -1,114 +1,146 @@
 import React, { useState, useEffect } from "react";
-import { Card, Button, Modal, Input, Form, Upload, message, Row, Col } from "antd";
-import { PlusOutlined, EditOutlined, DeleteOutlined, UploadOutlined } from "@ant-design/icons";
+import {
+  Card,
+  Button,
+  Modal,
+  Input,
+  Form,
+  Upload,
+  message,
+  Row,
+  Col,
+} from "antd";
+import {
+  PlusOutlined,
+  EditOutlined,
+  DeleteOutlined,
+  UploadOutlined,
+} from "@ant-design/icons";
 
 const { TextArea } = Input;
 
 const Project = () => {
-  const [services, setServices] = useState([]);
+  const [projects, setProjects] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingService, setEditingService] = useState(null);
+  const [editingProject, setEditingProject] = useState(null);
   const [form] = Form.useForm();
 
-  // ✅ Simulate data fetch (you can replace this with your API call)
+  // ✅ Dummy data (replace with API call)
   useEffect(() => {
     const dummyData = [
       {
         id: 1,
-        title: "Web Development",
+        title: "Corporate Website",
         content:
-          "We build scalable and user-friendly websites using the latest web technologies.",
-        image: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f",
+          "We develop modern, SEO-friendly corporate websites that align with your brand identity and goals.",
+        banner:
+          "https://images.unsplash.com/photo-1522202176988-66273c2fd55f",
+        gallery: [
+          "https://images.unsplash.com/photo-1518770660439-4636190af475",
+          "https://images.unsplash.com/photo-1504384308090-c894fdcc538d",
+        ],
       },
       {
         id: 2,
         title: "Mobile App Development",
         content:
-          "We craft mobile experiences that delight users and deliver business value.",
-        image: "https://images.unsplash.com/photo-1518770660439-4636190af475",
-      },
-      {
-        id: 3,
-        title: "Cloud Solutions",
-        content:
-          "Leverage cloud computing to scale your operations with reliability and efficiency.",
-        image: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d",
-      },
-      {
-        id: 4,
-        title: "UI/UX Design",
-        content:
-          "Our creative designers ensure your brand stands out with intuitive and elegant designs.",
-        image: "https://images.unsplash.com/photo-1507209696998-3c532be9b2b4",
+          "We build mobile apps that drive engagement and offer exceptional performance across devices.",
+        banner:
+          "https://images.unsplash.com/photo-1507209696998-3c532be9b2b4",
+        gallery: [
+          "https://images.unsplash.com/photo-1504384308090-c894fdcc538d",
+        ],
       },
     ];
-    setServices(dummyData);
+    setProjects(dummyData);
   }, []);
 
-  // ✅ Handle create or update
+  // ✅ Create / Update handler
   const handleOk = () => {
     form.validateFields().then((values) => {
-      const newService = {
+      const newProject = {
         ...values,
-        id: editingService ? editingService.id : Date.now(),
-        image:
-          values.image?.file?.thumbUrl ||
-          editingService?.image ||
-          "https://via.placeholder.com/300x200?text=Service+Image",
+        id: editingProject ? editingProject.id : Date.now(),
+        banner:
+          values.banner?.file?.thumbUrl ||
+          editingProject?.banner ||
+          "https://via.placeholder.com/300x200?text=Project+Banner",
+        gallery:
+          values.gallery?.fileList?.map((file) => file.thumbUrl) ||
+          editingProject?.gallery ||
+          [],
       };
 
-      if (editingService) {
-        // Update service
-        setServices((prev) =>
-          prev.map((s) => (s.id === editingService.id ? newService : s))
+      if (editingProject) {
+        setProjects((prev) =>
+          prev.map((p) => (p.id === editingProject.id ? newProject : p))
         );
-        message.success("Service updated successfully!");
+        message.success("Project updated successfully!");
       } else {
-        // Add new service
-        setServices((prev) => [...prev, newService]);
-        message.success("Service created successfully!");
+        setProjects((prev) => [...prev, newProject]);
+        message.success("Project created successfully!");
       }
 
       setIsModalOpen(false);
+      setEditingProject(null);
       form.resetFields();
-      setEditingService(null);
     });
   };
 
-  // ✅ Delete a service
+  // ✅ Delete project
   const handleDelete = (id) => {
     Modal.confirm({
-      title: "Delete this service?",
+      title: "Delete this project?",
       content: "This action cannot be undone.",
       okText: "Yes, delete",
       okType: "danger",
       cancelText: "Cancel",
       onOk: () => {
-        setServices((prev) => prev.filter((s) => s.id !== id));
-        message.success("Service deleted!");
+        setProjects((prev) => prev.filter((p) => p.id !== id));
+        message.success("Project deleted!");
       },
     });
   };
 
-  // ✅ Edit service
-  const handleEdit = (service) => {
-    setEditingService(service);
-    form.setFieldsValue(service);
+  // ✅ Edit project
+  const handleEdit = (project) => {
+    setEditingProject(project);
+    form.setFieldsValue({
+      title: project.title,
+      content: project.content,
+      banner: project.banner
+        ? [
+            {
+              uid: "-1",
+              name: "banner.png",
+              status: "done",
+              url: project.banner,
+            },
+          ]
+        : [],
+      gallery: project.gallery
+        ? project.gallery.map((url, i) => ({
+            uid: `${i}`,
+            name: `gallery-${i}.png`,
+            status: "done",
+            url,
+          }))
+        : [],
+    });
     setIsModalOpen(true);
   };
 
-  // ✅ Modal close
+  // ✅ Cancel modal
   const handleCancel = () => {
     setIsModalOpen(false);
-    setEditingService(null);
+    setEditingProject(null);
     form.resetFields();
   };
 
   return (
-    <div className="">
+    <div>
       {/* Header */}
-      <div className="flex justify-end items-center mb-6">
-        {/* <h1 className="text-xl font-semibold text-[#8B1E3F]">Projects</h1> */}
+      <div className="flex justify-end mb-6">
         <Button
           type="primary"
           icon={<PlusOutlined />}
@@ -119,16 +151,16 @@ const Project = () => {
         </Button>
       </div>
 
-      {/* Services Grid */}
+      {/* Projects Grid */}
       <Row gutter={[16, 16]}>
-        {services.map((service) => (
-          <Col key={service.id} xs={24} sm={12} md={12} lg={6}>
+        {projects.map((project) => (
+          <Col key={project.id} xs={24} sm={12} md={12} lg={6}>
             <Card
               hoverable
               cover={
                 <img
-                  alt={service.title}
-                  src={service.image}
+                  alt={project.title}
+                  src={project.banner}
                   className="h-40 w-full object-cover"
                 />
               }
@@ -136,23 +168,23 @@ const Project = () => {
               actions={[
                 <EditOutlined
                   key="edit"
-                  onClick={() => handleEdit(service)}
+                  onClick={() => handleEdit(project)}
                   className="text-blue-500"
                 />,
                 <DeleteOutlined
                   key="delete"
-                  onClick={() => handleDelete(service.id)}
+                  onClick={() => handleDelete(project.id)}
                   className="text-red-500"
                 />,
               ]}
             >
               <Card.Meta
-                title={<span className="font-semibold">{service.title}</span>}
+                title={<span className="font-semibold">{project.title}</span>}
                 description={
                   <p className="text-gray-600 text-sm">
-                    {service.content.length > 80
-                      ? service.content.slice(0, 80) + "..."
-                      : service.content}
+                    {project.content.length > 80
+                      ? project.content.slice(0, 80) + "..."
+                      : project.content}
                   </p>
                 }
               />
@@ -163,37 +195,50 @@ const Project = () => {
 
       {/* Modal for Create/Edit */}
       <Modal
-        title={editingService ? "Edit Service" : "Create Service"}
+        title={editingProject ? "Edit Project" : "Create Project"}
         open={isModalOpen}
         onOk={handleOk}
         onCancel={handleCancel}
-        okText={editingService ? "Update" : "Create"}
+        okText={editingProject ? "Update" : "Create"}
         okButtonProps={{ className: "!bg-[#8B1E3F]" }}
+        width={700}
       >
         <Form layout="vertical" form={form}>
           <Form.Item
             label="Title"
             name="title"
-            rules={[{ required: true, message: "Please enter a title" }]}
+            rules={[{ required: true, message: "Please enter a project title" }]}
           >
-            <Input placeholder="Service title" />
+            <Input placeholder="Project title" />
           </Form.Item>
 
           <Form.Item
             label="Content"
             name="content"
-            rules={[{ required: true, message: "Please enter content" }]}
+            rules={[{ required: true, message: "Please enter project content" }]}
           >
-            <TextArea rows={4} placeholder="Describe the service" />
+            <TextArea rows={4} placeholder="Describe the project" />
           </Form.Item>
 
-          <Form.Item label="Image" name="image">
+          {/* Banner Image */}
+          <Form.Item label="Project Banner" name="banner">
+            <Upload listType="picture" maxCount={1} beforeUpload={() => false}>
+              <Button icon={<UploadOutlined />}>Upload Banner</Button>
+            </Upload>
+          </Form.Item>
+
+          {/* Gallery Images */}
+          <Form.Item label="Project Gallery" name="gallery">
             <Upload
-              listType="picture"
-              maxCount={1}
+              listType="picture-card"
+              multiple
+              maxCount={5}
               beforeUpload={() => false}
             >
-              <Button icon={<UploadOutlined />}>Upload Image</Button>
+              <div>
+                <UploadOutlined />
+                <div style={{ marginTop: 8 }}>Upload (max 5)</div>
+              </div>
             </Upload>
           </Form.Item>
         </Form>
