@@ -18,6 +18,17 @@ body {
    background-color: #8B1E3F !important;
 }
 
+.ant-card-body{
+  padding: 10px !important;
+}
+.ant-card-bordered {
+  border-radius: 5px !important;
+}
+
+.ant-card .ant-card-cover{
+   border-radius: 5px !important;
+}
+
 /* :root {
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
