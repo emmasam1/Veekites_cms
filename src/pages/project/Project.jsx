@@ -28,12 +28,13 @@ const Project = () => {
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
+  const [editingProject, setEditingProject] = useState(null);
   const [form] = Form.useForm();
   const [messageApi, contextHolder] = message.useMessage();
   const navigate = useNavigate();
   const { BASE_URL, token } = useApp();
 
-  // Fetch projects
+  // ✅ Fetch projects
   const getAllProjects = async () => {
     setLoading(true);
     try {
@@ -49,49 +50,103 @@ const Project = () => {
     }
   };
 
-  //Create project
-  const handleCreate = async (values) => {
-    setLoading(true)
+  useEffect(() => {
+    getAllProjects();
+  }, []);
+
+  // ✅ Create or Update project
+  const handleSubmit = async (values) => {
+    setLoading(true);
     try {
       const formData = new FormData();
       for (const key in values) {
-        if (key === "mainImage") {
-          formData.append("mainImage", values.mainImage[0].originFileObj);
-        } else if (key === "gallery") {
+        if (key === "mainImage" && values.mainImage?.length > 0) {
+          const file = values.mainImage[0];
+          if (file.originFileObj) {
+            formData.append("mainImage", file.originFileObj);
+          }
+        } else if (key === "gallery" && values.gallery?.length > 0) {
           values.gallery.forEach((file) => {
-            formData.append("gallery", file.originFileObj);
+            if (file.originFileObj) formData.append("gallery", file.originFileObj);
           });
         } else {
           formData.append(key, values[key]);
         }
       }
 
-      await axios.post(`${BASE_URL}/api/projects`, formData, {
-       headers: { Authorization: `Bearer ${token}` },
-      });
+      if (editingProject) {
+        // Update
+        await axios.put(
+          `${BASE_URL}/api/projects/${editingProject._id}`,
+          formData,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        message.success("Project updated successfully");
+      } else {
+        // Create new
+        await axios.post(`${BASE_URL}/api/projects`, formData, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        message.success("Project created successfully");
+      }
 
-      message.success("Project created successfully");
       form.resetFields();
       setOpen(false);
+      setEditingProject(null);
       getAllProjects();
     } catch (error) {
-      message.error("Failed to create project");
+      message.error("Failed to save project");
       console.error(error);
-    }finally{
-      setLoading(false)
+    } finally {
+      setLoading(false);
     }
   };
 
-  useEffect(() => {
-    getAllProjects();
-  }, []);
+  // ✅ Handle edit — populate fields
+  const handleEdit = (project) => {
+    setEditingProject(project);
+    setOpen(true);
 
-  // Handle view
+    const mainImage = project.mainImage
+      ? [
+          {
+            uid: "-1",
+            name: "main.jpg",
+            status: "done",
+            url: project.mainImage.url || project.mainImage,
+          },
+        ]
+      : [];
+
+    const gallery = project.gallery
+      ? project.gallery.map((img, i) => ({
+          uid: `${i}`,
+          name: `gallery-${i + 1}.jpg`,
+          status: "done",
+          url: img.url || img,
+        }))
+      : [];
+
+    form.setFieldsValue({
+      title: project.title,
+      client: project.client,
+      location: project.location,
+      area: project.area,
+      year: project.year,
+      sector: project.sector,
+      description: project.description,
+      mainImage,
+      gallery,
+      isLatest: project.isLatest,
+    });
+  };
+
+  // ✅ Handle view
   const handleView = (project) => {
     navigate(`/admin/dashboard/projects/${project._id}`, { state: project });
   };
 
-  // Handle delete
+  // ✅ Handle delete
   const handleDelete = (id) => {
     Modal.confirm({
       title: "Delete this project?",
@@ -120,7 +175,11 @@ const Project = () => {
         <Button
           type="primary"
           icon={<PlusOutlined />}
-          onClick={() => setOpen(true)}
+          onClick={() => {
+            setEditingProject(null);
+            form.resetFields();
+            setOpen(true);
+          }}
           className="!bg-[#8B1E3F]"
         >
           Create Project
@@ -163,14 +222,7 @@ const Project = () => {
                   />,
                   <EditOutlined
                     key="edit"
-                    onClick={() =>
-                      navigate(
-                        `/admin/dashboard/projects/edit/${project._id}`,
-                        {
-                          state: project,
-                        }
-                      )
-                    }
+                    onClick={() => handleEdit(project)}
                     className="text-blue-500"
                   />,
                   <DeleteOutlined
@@ -197,23 +249,26 @@ const Project = () => {
         </Row>
       )}
 
-      {/* Create Project Modal */}
+      {/* ✅ Create/Edit Project Modal */}
       <Modal
-         title="Create New Project"
+        title={editingProject ? "Edit Project" : "Create New Project"}
         open={open}
-        onCancel={() => setOpen(false)}
-        okText="Create"
+        onCancel={() => {
+          setOpen(false);
+          setEditingProject(null);
+        }}
+        okText={editingProject ? "Update" : "Create"}
         cancelText="Cancel"
         okButtonProps={{
           className: "!bg-[#8B1E3F] hover:!bg-[#a22b50] text-white",
         }}
         onOk={() => form.submit()}
-        width={600}
+        width={650}
       >
         <Form
           layout="vertical"
           form={form}
-          onFinish={handleCreate}
+          onFinish={handleSubmit}
           className="mt-4"
         >
           <Row gutter={16}>
@@ -231,9 +286,7 @@ const Project = () => {
               <Form.Item
                 name="client"
                 label="Client"
-                rules={[
-                  { required: true, message: "Please enter client name" },
-                ]}
+                rules={[{ required: true, message: "Please enter client name" }]}
               >
                 <Input placeholder="Enter client name" />
               </Form.Item>
@@ -269,10 +322,7 @@ const Project = () => {
 
             <Col span={24}>
               <Form.Item name="description" label="Description">
-                <Input.TextArea
-                  rows={4}
-                  placeholder="Enter project description"
-                />
+                <Input.TextArea rows={4} placeholder="Enter project description" />
               </Form.Item>
             </Col>
 
@@ -282,9 +332,6 @@ const Project = () => {
                 label="Main Image"
                 valuePropName="fileList"
                 getValueFromEvent={(e) => e?.fileList}
-                rules={[
-                  { required: true, message: "Please upload a main image" },
-                ]}
               >
                 <Upload
                   listType="picture"
