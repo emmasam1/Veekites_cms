@@ -6,6 +6,7 @@ import {
   FolderOpenOutlined,
   SettingOutlined,
   LogoutOutlined,
+  TeamOutlined 
 } from "@ant-design/icons";
 import { Layout, Menu, theme, Grid, Dropdown, Avatar } from "antd";
 import { Outlet, useLocation, useNavigate } from "react-router";
@@ -23,6 +24,7 @@ const items = [
   getItem("Dashboard", "/admin/dashboard", <DashboardOutlined />),
   getItem("Services", "/admin/dashboard/services", <AppstoreOutlined />),
   getItem("Projects", "/admin/dashboard/projects", <FolderOpenOutlined />),
+  getItem("Team", "/admin/dashboard/team", <TeamOutlined  />),
   getItem("Site Management", "/admin/dashboard/site-management", <SettingOutlined />),
 ];
 
@@ -30,6 +32,7 @@ const routeTitles = {
   "/admin/dashboard": "Dashboard",
   "/admin/dashboard/services": "Services",
   "/admin/dashboard/projects": "Projects",
+  "/admin/dashboard/team": "Team",
   "/admin/dashboard/site-management": "Site Management",
 };
 

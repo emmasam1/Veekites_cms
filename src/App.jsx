@@ -8,6 +8,7 @@ import Project from "./pages/project/Project";
 import SiteManagement from "./pages/sitesetting/SiteManagement";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ProjectDetails from "./pages/project/ProjectDetails";
+import Team from "./pages/team/Team";
 
 function App() {
   return (
@@ -29,6 +30,7 @@ function App() {
         <Route path="projects" element={<Project />} />
         <Route path="projects/:id" element={<ProjectDetails />} />
         <Route path="site-management" element={<SiteManagement />} />
+        <Route path="team" element={<Team />} />
       </Route>
     </Routes>
   );

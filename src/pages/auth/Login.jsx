@@ -39,7 +39,7 @@ const Login = () => {
     <div className="h-screen w-full bg-no-repeat bg-cover bg-center bg-[url(/src/assets/background.jpg)]">
       {contextHolder}
       <div className="h-screen w-full bg-[#00000078] flex items-center justify-center">
-        <Card className="w-[80%] sm:w-[350px] shadow-2xl rounded-2xl">
+        <Card className="w-[80%] sm:w-[350px] shadow-2xl rounded-2xl !px-5">
           <h1 className="font-bold text-3xl text-center">Welcome Back!</h1>
           <p className="text-center text-lg py-4">
             Veekites Global Services Limited
