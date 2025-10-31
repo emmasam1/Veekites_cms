@@ -48,6 +48,41 @@ const Team = () => {
   }
 };
 
+// ✅ Add Team Member
+const addTeamMember = async (values) => {
+  try {
+    setLoading(true);
+
+    // Prepare form data
+    const formData = new FormData();
+    formData.append("name", values.name);
+    formData.append("role", values.role);
+    formData.append("email", values.email);
+
+    if (values.image && values.image[0]?.originFileObj) {
+      formData.append("image", values.image[0].originFileObj);
+    }
+
+    const res = await axios.post(`${BASE_URL}/api/team`, formData, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "multipart/form-data",
+      },
+    });
+
+    messageApi.success("Team member added successfully!");
+    setTeam((prev) => [res.data.data, ...prev]); // instantly update list
+    setIsModalOpen(false);
+    form.resetFields();
+  } catch (error) {
+    console.error(error);
+    messageApi.error(error.response?.data?.message || "Failed to add team member");
+  } finally {
+    setLoading(false);
+  }
+};
+
+
   useEffect(() => {
     getTeam();
   }, []);
