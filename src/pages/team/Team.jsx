@@ -32,56 +32,57 @@ const Team = () => {
   const [form] = Form.useForm();
 
   const getTeam = async () => {
-  setLoading(true);
-  try {
-    const res = await axios.get(`${BASE_URL}/api/team`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    setTeam(res?.data?.data || []);
-
-    messageApi.success("Team loaded successfully!");
-  } catch (error) {
-    console.error(error);
-    messageApi.error("Failed to load team members");
-  } finally {
-    setLoading(false);
-  }
-};
-
-// ✅ Add Team Member
-const addTeamMember = async (values) => {
-  try {
     setLoading(true);
+    try {
+      const res = await axios.get(`${BASE_URL}/api/team`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setTeam(res?.data?.data || []);
 
-    // Prepare form data
-    const formData = new FormData();
-    formData.append("name", values.name);
-    formData.append("role", values.role);
-    formData.append("email", values.email);
-
-    if (values.image && values.image[0]?.originFileObj) {
-      formData.append("image", values.image[0].originFileObj);
+      messageApi.success("Team loaded successfully!");
+    } catch (error) {
+      console.error(error);
+      messageApi.error("Failed to load team members");
+    } finally {
+      setLoading(false);
     }
+  };
 
-    const res = await axios.post(`${BASE_URL}/api/team`, formData, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "multipart/form-data",
-      },
-    });
+  // ✅ Add Team Member
+  const addTeamMember = async (values) => {
+    try {
+      setLoading(true);
 
-    messageApi.success("Team member added successfully!");
-    setTeam((prev) => [res.data.data, ...prev]); // instantly update list
-    setIsModalOpen(false);
-    form.resetFields();
-  } catch (error) {
-    console.error(error);
-    messageApi.error(error.response?.data?.message || "Failed to add team member");
-  } finally {
-    setLoading(false);
-  }
-};
+      // Prepare form data
+      const formData = new FormData();
+      formData.append("name", values.name);
+      formData.append("role", values.role);
+      formData.append("email", values.email);
 
+      if (values.image && values.image[0]?.originFileObj) {
+        formData.append("image", values.image[0].originFileObj);
+      }
+
+      const res = await axios.post(`${BASE_URL}/api/team`, formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      messageApi.success("Team member added successfully!");
+      setTeam((prev) => [res.data.data, ...prev]); // instantly update list
+      setIsModalOpen(false);
+      form.resetFields();
+    } catch (error) {
+      console.error(error);
+      messageApi.error(
+        error.response?.data?.message || "Failed to add team member"
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     getTeam();
@@ -91,38 +92,27 @@ const addTeamMember = async (values) => {
   const handleOk = async () => {
     try {
       const values = await form.validateFields();
-      setLoading(true);
-
-      let imageUrl =
-        values.image?.[0]?.originFileObj
-          ? URL.createObjectURL(values.image[0].originFileObj)
-          : editingMember?.image;
-
-      const newMember = {
-        id: editingMember ? editingMember.id : Date.now(),
-        name: values.name,
-        role: values.role,
-        email: values.email,
-        image: imageUrl || "https://via.placeholder.com/150",
-      };
 
       if (editingMember) {
+        // You can create another function to handle edit, similar to add
+        // for now, let’s just update locally
+        const updatedMember = {
+          ...editingMember,
+          ...values,
+        };
         setTeam((prev) =>
-          prev.map((m) => (m.id === editingMember.id ? newMember : m))
+          prev.map((m) => (m.id === editingMember.id ? updatedMember : m))
         );
-        message.success("Team member updated!");
+        messageApi.success("Team member updated!");
+        setIsModalOpen(false);
+        form.resetFields();
+        setEditingMember(null);
       } else {
-        setTeam((prev) => [...prev, newMember]);
-        message.success("Team member added!");
+        // Create new team member
+        await addTeamMember(values);
       }
-
-      setIsModalOpen(false);
-      setEditingMember(null);
-      form.resetFields();
     } catch (error) {
       console.error(error);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -164,7 +154,7 @@ const addTeamMember = async (values) => {
 
   return (
     <div>
-        {contextHolder}
+      {contextHolder}
       {/* Add Team Button */}
       <div className="flex justify-end mb-6">
         <Button
