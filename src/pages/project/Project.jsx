@@ -261,7 +261,7 @@ const Project = () => {
         okText={editingProject ? "Update" : "Create"}
         cancelText="Cancel"
         okButtonProps={{
-          className: "!bg-[#8B1E3F] hover:!bg-[#a22b50] text-white",
+          className: "!bg-[#8B1E3F] hover:!bg-[#a22b50] text-white", loading
         }}
         onOk={() => form.submit()}
         width={650}

@@ -165,7 +165,7 @@ const Services = () => {
           onClick={() => setIsModalOpen(true)}
           className="!bg-[#8B1E3F]"
         >
-          Create Project
+          Create Service
         </Button>
       </div>
 
@@ -224,7 +224,7 @@ const Services = () => {
 
       {/* Create/Edit Modal */}
       <Modal
-        title={editingService ? "Edit Project" : "Create Project"}
+        title={editingService ? "Edit Service" : "Create Service"}
         open={isModalOpen}
         onOk={handleOk}
         onCancel={handleCancel}
