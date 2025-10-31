@@ -40,6 +40,7 @@ const Project = () => {
     try {
       const res = await axios.get(`${BASE_URL}/api/projects`);
       setProjects(res?.data?.projects || []);
+      messageApi.success("Project loaded successfully!")
     } catch (error) {
       console.error(error);
       messageApi.error(

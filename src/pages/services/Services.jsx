@@ -39,7 +39,8 @@ const Services = () => {
     setLoading(true);
     try {
       const res = await axios.get(`${BASE_URL}/api/services`);
-      setServices(res.data);
+      setServices(res.data || []);
+      messageApi.success("Services loaded successfully!");
     } catch (error) {
       console.error(error);
       message.error("Failed to fetch services");
