@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Card,
   Row,
@@ -18,49 +18,50 @@ import {
   EyeOutlined,
   UploadOutlined,
 } from "@ant-design/icons";
-
-const { TextArea } = Input;
+import { useApp } from "../../context/AppContext";
+import axios from "axios";
 
 const Team = () => {
-  const [team, setTeam] = useState([
-    {
-      id: 1,
-      name: "Pedro Ebipade",
-      role: "Field Manager",
-      email: "info@veekites.com",
-      image: "https://via.placeholder.com/150",
-    },
-    {
-      id: 2,
-      name: "Sarah Johnson",
-      role: "Operations Lead",
-      email: "sarah@veekites.com",
-      image: "https://via.placeholder.com/150",
-    },
-    {
-      id: 3,
-      name: "James Doe",
-      role: "Technical Engineer",
-      email: "james@veekites.com",
-      image: "https://via.placeholder.com/150",
-    },
-  ]);
-
+  const [loading, setLoading] = useState(false);
+  const { BASE_URL, token } = useApp();
+  const [team, setTeam] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingMember, setEditingMember] = useState(null);
   const [viewingMember, setViewingMember] = useState(null);
+  const [messageApi, contextHolder] = message.useMessage();
   const [form] = Form.useForm();
-  const [loading, setLoading] = useState(false);
 
-  // ✅ Handle submit (add or edit)
+  const getTeam = async () => {
+  setLoading(true);
+  try {
+    const res = await axios.get(`${BASE_URL}/api/team`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    setTeam(res?.data?.data || []);
+
+    messageApi.success("Team loaded successfully!");
+  } catch (error) {
+    console.error(error);
+    messageApi.error("Failed to load team members");
+  } finally {
+    setLoading(false);
+  }
+};
+
+  useEffect(() => {
+    getTeam();
+  }, []);
+
+  // ✅ Create or Update
   const handleOk = async () => {
     try {
       const values = await form.validateFields();
       setLoading(true);
 
-      let imageUrl = values.image?.[0]?.originFileObj
-        ? URL.createObjectURL(values.image[0].originFileObj)
-        : editingMember?.image;
+      let imageUrl =
+        values.image?.[0]?.originFileObj
+          ? URL.createObjectURL(values.image[0].originFileObj)
+          : editingMember?.image;
 
       const newMember = {
         id: editingMember ? editingMember.id : Date.now(),
@@ -90,7 +91,7 @@ const Team = () => {
     }
   };
 
-  // ✅ Edit member
+  // ✅ Edit Member
   const handleEdit = (member) => {
     setEditingMember(member);
     form.setFieldsValue({
@@ -101,7 +102,7 @@ const Team = () => {
     setIsModalOpen(true);
   };
 
-  // ✅ Delete member
+  // ✅ Delete Member
   const handleDelete = (id) => {
     Modal.confirm({
       title: "Delete this member?",
@@ -116,12 +117,10 @@ const Team = () => {
     });
   };
 
-  // ✅ View member
-  const handleView = (member) => {
-    setViewingMember(member);
-  };
+  // ✅ View Member
+  const handleView = (member) => setViewingMember(member);
 
-  // ✅ Cancel modal
+  // ✅ Cancel Modal
   const handleCancel = () => {
     setIsModalOpen(false);
     setEditingMember(null);
@@ -129,8 +128,9 @@ const Team = () => {
   };
 
   return (
-    <div className="p-6">
-      {/* Header */}
+    <div>
+        {contextHolder}
+      {/* Add Team Button */}
       <div className="flex justify-end mb-6">
         <Button
           type="primary"
@@ -142,10 +142,12 @@ const Team = () => {
         </Button>
       </div>
 
-      {/* Team Grid */}
+      {/* Team Cards */}
       <Row gutter={[24, 24]} justify="start">
-        {team.length === 0 ? (
+        {loading ? (
           <Skeleton active />
+        ) : team.length === 0 ? (
+          <p className="text-gray-500">No team members found</p>
         ) : (
           team.map((member) => (
             <Col key={member.id} xs={24} sm={12} md={8} lg={6}>
@@ -174,7 +176,11 @@ const Team = () => {
                 <div className="flex flex-col items-center">
                   <div className="w-32 h-32 rounded-full border-[5px] border-[#8B1E3F] overflow-hidden mb-4">
                     <img
-                      src={member.image}
+                      src={
+                        member.image?.url
+                          ? member.image.url
+                          : member.image || "https://via.placeholder.com/150"
+                      }
                       alt={member.name}
                       className="w-full h-full object-cover"
                     />
@@ -191,7 +197,7 @@ const Team = () => {
         )}
       </Row>
 
-      {/* Create / Edit Modal */}
+      {/* Add/Edit Modal */}
       <Modal
         title={editingMember ? "Edit Team Member" : "Add Team Member"}
         open={isModalOpen}
@@ -236,7 +242,24 @@ const Team = () => {
               { required: !editingMember, message: "Please upload an image" },
             ]}
           >
-            <Upload listType="picture-card" maxCount={1} beforeUpload={() => false}>
+            <Upload
+              listType="picture-card"
+              maxCount={1}
+              beforeUpload={() => false}
+              defaultFileList={
+                editingMember?.image
+                  ? [
+                      {
+                        uid: "-1",
+                        name: "existing-image.jpg",
+                        status: "done",
+                        url:
+                          editingMember.image?.url || editingMember.image || "",
+                      },
+                    ]
+                  : []
+              }
+            >
               <div>
                 <UploadOutlined />
                 <p>Upload</p>
@@ -257,7 +280,11 @@ const Team = () => {
         <div className="flex flex-col items-center text-center">
           <div className="w-36 h-36 rounded-full border-[5px] border-[#8B1E3F] overflow-hidden mb-4">
             <img
-              src={viewingMember?.image}
+              src={
+                viewingMember?.image?.url
+                  ? viewingMember.image.url
+                  : viewingMember?.image || "https://via.placeholder.com/150"
+              }
               alt={viewingMember?.name}
               className="w-full h-full object-cover"
             />

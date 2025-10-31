@@ -29,6 +29,7 @@ const Services = () => {
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [selectedService, setSelectedService] = useState(null);
   const [editingService, setEditingService] = useState(null);
+  const [messageApi, contextHolder] = message.useMessage();
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const { BASE_URL, token } = useApp();
@@ -66,7 +67,7 @@ const Services = () => {
         const fileObj = values.image[0].originFileObj;
         if (fileObj) formData.append("image", fileObj);
       } else if (!editingService) {
-        message.error("Please upload an image");
+        messageApi.error("Please upload an image");
         return;
       }
 
@@ -77,10 +78,10 @@ const Services = () => {
 
       if (editingService) {
         await axios.put(`${BASE_URL}/api/services/${editingService._id}`, formData, { headers });
-        message.success("Service updated successfully");
+        messageApi.success("Service updated successfully");
       } else {
         await axios.post(`${BASE_URL}/api/services`, formData, { headers });
-        message.success("Service created successfully");
+        messageApi.success("Service created successfully");
       }
 
       setIsModalOpen(false);
@@ -89,7 +90,7 @@ const Services = () => {
       getAllServices();
     } catch (error) {
       console.error(error);
-      message.error(error.response?.data?.message || "Failed to save service");
+      messageApi.error(error.response?.data?.message || "Failed to save service");
     }finally{
       setLoading(false)
     }
@@ -108,10 +109,10 @@ const Services = () => {
           await axios.delete(`${BASE_URL}/api/services/${id}`, {
             headers: { Authorization: `Bearer ${token}` },
           });
-          message.success("Service deleted!");
+          messageApi.success("Service deleted!");
           setServices((prev) => prev.filter((s) => s._id !== id));
         } catch {
-          message.error("Failed to delete service");
+          messageApi.error("Failed to delete service");
         }
       },
     });
@@ -153,7 +154,8 @@ const Services = () => {
   };
 
   return (
-    <div className="p-4">
+    <div className="">
+      {contextHolder}
       {/* Header */}
       <div className="flex justify-end mb-6">
         <Button
