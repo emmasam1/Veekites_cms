@@ -1,5 +1,6 @@
 // src/layouts/admin/DashboardLayout.jsx
 import React, { useState, useEffect } from "react";
+import logo from "../assets/logo_small.png";
 import {
   DashboardOutlined,
   AppstoreOutlined,
@@ -14,7 +15,9 @@ import { Outlet, useLocation, useNavigate } from "react-router";
 const { Header, Content, Sider } = Layout;
 const { useBreakpoint } = Grid;
 
-const menu_items = [{ key: "logout", label: "Logout", icon: <LogoutOutlined /> }];
+const menu_items = [
+  { key: "logout", label: "Logout", icon: <LogoutOutlined /> },
+];
 
 function getItem(label, key, icon) {
   return { key, icon, label };
@@ -25,10 +28,13 @@ const items = [
   getItem("Services", "/admin/dashboard/services", <AppstoreOutlined />),
   getItem("Projects", "/admin/dashboard/projects", <FolderOpenOutlined />),
   getItem("Team", "/admin/dashboard/team", <TeamOutlined />),
-  getItem("Site Management", "/admin/dashboard/site-management", <SettingOutlined />),
+  getItem(
+    "Site Management",
+    "/admin/dashboard/site-management",
+    <SettingOutlined />
+  ),
 ];
 
-// ✅ Route titles (including dynamic handling)
 const routeTitles = {
   "/admin/dashboard": "Dashboard",
   "/admin/dashboard/services": "Services",
@@ -79,22 +85,30 @@ const DashboardLayout = () => {
           bottom: 0,
         }}
       >
-        {/* Avatar / Logo */}
+        {/* Logo Section */}
         <div
           style={{
-            height: 64,
+            height: 80,
             margin: "16px",
-            borderRadius: 8,
-            backgroundColor: "rgba(255,255,255,0.15)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            color: "#fff",
-            fontWeight: "bold",
-            fontSize: 18,
+            backgroundColor: "whitesmoke",
+            borderRadius: 10,
+            overflow: "hidden",
           }}
         >
-          CMS
+          <img
+            src={logo}
+            alt="Logo"
+            style={{
+              width: collapsed ? 40 : 100,
+              height: "auto",
+              transition: "all 0.3s ease",
+              objectFit: "contain",
+              filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.3))",
+            }}
+          />
         </div>
 
         {/* Sidebar Menu */}

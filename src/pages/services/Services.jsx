@@ -10,6 +10,7 @@ import {
   Row,
   Col,
   Skeleton,
+  Popconfirm,
 } from "antd";
 import {
   PlusOutlined,
@@ -55,7 +56,7 @@ const Services = () => {
 
   // ✅ Create / Update
   const handleOk = async () => {
-    setLoading(true)
+    setLoading(true);
     try {
       const values = await form.validateFields();
       const formData = new FormData();
@@ -78,7 +79,11 @@ const Services = () => {
       };
 
       if (editingService) {
-        await axios.put(`${BASE_URL}/api/services/${editingService._id}`, formData, { headers });
+        await axios.put(
+          `${BASE_URL}/api/services/${editingService._id}`,
+          formData,
+          { headers }
+        );
         messageApi.success("Service updated successfully");
       } else {
         await axios.post(`${BASE_URL}/api/services`, formData, { headers });
@@ -91,32 +96,29 @@ const Services = () => {
       getAllServices();
     } catch (error) {
       console.error(error);
-      messageApi.error(error.response?.data?.message || "Failed to save service");
-    }finally{
-      setLoading(false)
+      messageApi.error(
+        error.response?.data?.message || "Failed to save service"
+      );
+    } finally {
+      setLoading(false);
     }
   };
 
   // ✅ Delete service
-  const handleDelete = (id) => {
-    Modal.confirm({
-      title: "Delete this service?",
-      content: "This action cannot be undone.",
-      okText: "Yes, delete",
-      okType: "danger",
-      cancelText: "Cancel",
-      async onOk() {
-        try {
-          await axios.delete(`${BASE_URL}/api/services/${id}`, {
-            headers: { Authorization: `Bearer ${token}` },
-          });
-          messageApi.success("Service deleted!");
-          setServices((prev) => prev.filter((s) => s._id !== id));
-        } catch {
-          messageApi.error("Failed to delete service");
-        }
-      },
-    });
+  const handleDelete = async (id) => {
+    setLoading(true);
+    try {
+      const res = await axios.delete(`${BASE_URL}/api/services/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setServices((prev) => prev.filter((service) => service._id !== id));
+      message.success(res?.data?.message || "service deleted successfully");
+    } catch (error) {
+      console.error(error);
+      message.error("Failed to delete service");
+    } finally {
+      setLoading(false);
+    }
   };
 
   // ✅ Edit service (populate form + preview)
@@ -171,55 +173,67 @@ const Services = () => {
 
       {/* Grid */}
       <Row gutter={[16, 16]}>
-        {loading ? (
-          [...Array(4)].map((_, i) => (
-            <Col key={i} xs={24} sm={12} md={8} lg={6}>
-              <Skeleton active />
-            </Col>
-          ))
-        ) : (
-          services.map((service) => (
-            <Col key={service._id} xs={24} sm={12} md={8} lg={6}>
-              <Card
-                hoverable
-                cover={
-                  <img
-                    alt={service.title}
-                    src={service.image?.url || "https://via.placeholder.com/300x200"}
-                    className="h-48 w-full object-cover rounded-t-lg"
-                  />
-                }
-                className="rounded-lg shadow-md"
-                actions={[
-                  <EyeOutlined
-                    key="view"
-                    onClick={() => handleView(service)}
-                    className="text-gray-500 hover:text-blue-500"
-                  />,
-                  <EditOutlined
-                    key="edit"
-                    onClick={() => handleEdit(service)}
-                    className="text-blue-500"
-                  />,
-                  <DeleteOutlined
-                    key="delete"
-                    onClick={() => handleDelete(service._id)}
-                    className="text-red-500"
-                  />,
-                ]}
-              >
-                <Card.Meta
-                  title={<span className="font-semibold">{service.title}</span>}
-                  description={
-                    <p className="text-gray-600 text-sm mt-1 line-clamp-2">
-                      {service.description || "No description provided."}
-                    </p>
+        {loading
+          ? [...Array(4)].map((_, i) => (
+              <Col key={i} xs={24} sm={12} md={8} lg={6}>
+                <Skeleton active />
+              </Col>
+            ))
+          : services.map((service) => (
+              <Col key={service._id} xs={24} sm={12} md={8} lg={6}>
+                <Card
+                  hoverable
+                  cover={
+                    <img
+                      alt={service.title}
+                      src={
+                        service.image?.url ||
+                        "https://via.placeholder.com/300x200"
+                      }
+                      className="h-48 w-full object-cover rounded-t-lg"
+                    />
                   }
-                />
-              </Card>
-            </Col>
-          ))
-        )}
+                  className="rounded-lg shadow-md"
+                  actions={[
+                    <EyeOutlined
+                      key="view"
+                      onClick={() => handleView(service)}
+                      className="text-gray-500 hover:text-blue-500"
+                    />,
+                    <EditOutlined
+                      key="edit"
+                      onClick={() => handleEdit(service)}
+                      className="text-blue-500"
+                    />,
+                    <Popconfirm
+                      title="Delete this project?"
+                      description="This action cannot be undone."
+                      okText="Yes, delete"
+                      okType="danger"
+                      cancelText="Cancel"
+                      okButtonProps={{
+                        danger: true,
+                        loading: loading, // ✅ show spinner when deleting
+                      }}
+                      onConfirm={() => handleDelete(service._id)}
+                    >
+                      <DeleteOutlined />
+                    </Popconfirm>,
+                  ]}
+                >
+                  <Card.Meta
+                    title={
+                      <span className="font-semibold">{service.title}</span>
+                    }
+                    description={
+                      <p className="text-gray-600 text-sm mt-1 line-clamp-2">
+                        {service.description || "No description provided."}
+                      </p>
+                    }
+                  />
+                </Card>
+              </Col>
+            ))}
       </Row>
 
       {/* Create/Edit Modal */}
@@ -257,7 +271,9 @@ const Services = () => {
             name="image"
             valuePropName="fileList"
             getValueFromEvent={(e) => (Array.isArray(e) ? e : e?.fileList)}
-            rules={[{ required: !editingService, message: "Please upload an image" }]}
+            rules={[
+              { required: !editingService, message: "Please upload an image" },
+            ]}
           >
             <Upload
               listType="picture-card"
