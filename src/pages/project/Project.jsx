@@ -12,6 +12,7 @@ import {
   Input,
   Upload,
   Switch,
+  Popconfirm,
 } from "antd";
 import {
   PlusOutlined,
@@ -40,7 +41,7 @@ const Project = () => {
     try {
       const res = await axios.get(`${BASE_URL}/api/projects`);
       setProjects(res?.data?.projects || []);
-      messageApi.success("Project loaded successfully!")
+      messageApi.success("Project loaded successfully!");
     } catch (error) {
       console.error(error);
       messageApi.error(
@@ -68,7 +69,8 @@ const Project = () => {
           }
         } else if (key === "gallery" && values.gallery?.length > 0) {
           values.gallery.forEach((file) => {
-            if (file.originFileObj) formData.append("gallery", file.originFileObj);
+            if (file.originFileObj)
+              formData.append("gallery", file.originFileObj);
           });
         } else {
           formData.append(key, values[key]);
@@ -148,23 +150,20 @@ const Project = () => {
   };
 
   // ✅ Handle delete
-  const handleDelete = (id) => {
-    Modal.confirm({
-      title: "Delete this project?",
-      content: "This action cannot be undone.",
-      okText: "Yes, delete",
-      okType: "danger",
-      cancelText: "Cancel",
-      onOk: async () => {
-        try {
-          await axios.delete(`${BASE_URL}/api/projects/${id}`);
-          setProjects((prev) => prev.filter((p) => p._id !== id));
-          message.success("Project deleted successfully");
-        } catch (error) {
-          message.error("Failed to delete project");
-        }
-      },
-    });
+  const handleDelete = async (id) => {
+    setLoading(true);
+    try {
+      const res = await axios.delete(`${BASE_URL}/api/projects/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setProjects((prev) => prev.filter((p) => p._id !== id));
+      message.success(res?.data?.message || "Project deleted successfully");
+    } catch (error) {
+      console.error(error);
+      message.error("Failed to delete project");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -226,11 +225,20 @@ const Project = () => {
                     onClick={() => handleEdit(project)}
                     className="text-blue-500"
                   />,
-                  <DeleteOutlined
-                    key="delete"
-                    onClick={() => handleDelete(project._id)}
-                    className="text-red-500"
-                  />,
+                  <Popconfirm
+                    title="Delete this project?"
+                    description="This action cannot be undone."
+                    okText="Yes, delete"
+                    okType="danger"
+                    cancelText="Cancel"
+                    okButtonProps={{
+                      danger: true,
+                      loading: loading, // ✅ show spinner when deleting
+                    }}
+                    onConfirm={() => handleDelete(project._id)}
+                  >
+                    <DeleteOutlined />
+                  </Popconfirm>,
                 ]}
               >
                 <Card.Meta
@@ -261,7 +269,8 @@ const Project = () => {
         okText={editingProject ? "Update" : "Create"}
         cancelText="Cancel"
         okButtonProps={{
-          className: "!bg-[#8B1E3F] hover:!bg-[#a22b50] text-white", loading
+          className: "!bg-[#8B1E3F] hover:!bg-[#a22b50] text-white",
+          loading,
         }}
         onOk={() => form.submit()}
         width={650}
@@ -287,7 +296,9 @@ const Project = () => {
               <Form.Item
                 name="client"
                 label="Client"
-                rules={[{ required: true, message: "Please enter client name" }]}
+                rules={[
+                  { required: true, message: "Please enter client name" },
+                ]}
               >
                 <Input placeholder="Enter client name" />
               </Form.Item>
@@ -323,7 +334,10 @@ const Project = () => {
 
             <Col span={24}>
               <Form.Item name="description" label="Description">
-                <Input.TextArea rows={4} placeholder="Enter project description" />
+                <Input.TextArea
+                  rows={4}
+                  placeholder="Enter project description"
+                />
               </Form.Item>
             </Col>
 
