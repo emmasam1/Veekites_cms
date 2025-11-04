@@ -6,7 +6,7 @@ import {
   FolderOpenOutlined,
   SettingOutlined,
   LogoutOutlined,
-  TeamOutlined 
+  TeamOutlined,
 } from "@ant-design/icons";
 import { Layout, Menu, theme, Grid, Dropdown, Avatar } from "antd";
 import { Outlet, useLocation, useNavigate } from "react-router";
@@ -24,16 +24,21 @@ const items = [
   getItem("Dashboard", "/admin/dashboard", <DashboardOutlined />),
   getItem("Services", "/admin/dashboard/services", <AppstoreOutlined />),
   getItem("Projects", "/admin/dashboard/projects", <FolderOpenOutlined />),
-  getItem("Team", "/admin/dashboard/team", <TeamOutlined  />),
+  getItem("Team", "/admin/dashboard/team", <TeamOutlined />),
   getItem("Site Management", "/admin/dashboard/site-management", <SettingOutlined />),
 ];
 
+// ✅ Route titles (including dynamic handling)
 const routeTitles = {
   "/admin/dashboard": "Dashboard",
   "/admin/dashboard/services": "Services",
-  "/admin/dashboard/projects": "Projects",
   "/admin/dashboard/team": "Team",
   "/admin/dashboard/site-management": "Site Management",
+};
+
+const getPageTitle = (pathname) => {
+  if (pathname.startsWith("/admin/dashboard/projects")) return "Projects";
+  return routeTitles[pathname] || "Dashboard";
 };
 
 const DashboardLayout = () => {
@@ -50,7 +55,7 @@ const DashboardLayout = () => {
     setCollapsed(!screens.lg);
   }, [screens]);
 
-  const pageTitle = routeTitles[location.pathname] || "Dashboard";
+  const pageTitle = getPageTitle(location.pathname);
 
   const handleMenuClick = ({ key }) => {
     if (key === "logout") navigate("/");
@@ -135,7 +140,9 @@ const DashboardLayout = () => {
             transition: "all 0.2s ease",
           }}
         >
-          <h1 className="text-lg font-semibold m-0 text-[#8B1E3F]">{pageTitle}</h1>
+          <h1 className="text-lg font-semibold m-0 text-[#8B1E3F]">
+            {pageTitle}
+          </h1>
 
           <Dropdown menu={{ items: menu_items, onClick: handleMenuClick }}>
             <div
