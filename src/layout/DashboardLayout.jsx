@@ -28,18 +28,18 @@ const items = [
   getItem("Services", "/admin/dashboard/services", <AppstoreOutlined />),
   getItem("Projects", "/admin/dashboard/projects", <FolderOpenOutlined />),
   getItem("Team", "/admin/dashboard/team", <TeamOutlined />),
-  getItem(
-    "Site Management",
-    "/admin/dashboard/site-management",
-    <SettingOutlined />
-  ),
+  // getItem(
+  //   "Site Management",
+  //   "/admin/dashboard/site-management",
+  //   <SettingOutlined />
+  // ),
 ];
 
 const routeTitles = {
   "/admin/dashboard": "Dashboard",
   "/admin/dashboard/services": "Services",
   "/admin/dashboard/team": "Team",
-  "/admin/dashboard/site-management": "Site Management",
+  // "/admin/dashboard/site-management": "Site Management",
 };
 
 const getPageTitle = (pathname) => {
