@@ -10,6 +10,7 @@ import {
   Upload,
   message,
   Skeleton,
+  Popconfirm
 } from "antd";
 import {
   PlusOutlined,
@@ -17,6 +18,7 @@ import {
   DeleteOutlined,
   EyeOutlined,
   UploadOutlined,
+  // Popconfirm
 } from "@ant-design/icons";
 import { useApp } from "../../context/AppContext";
 import axios from "axios";
@@ -31,6 +33,7 @@ const Team = () => {
   const [messageApi, contextHolder] = message.useMessage();
   const [form] = Form.useForm();
 
+  // ✅ Fetch all team members
   const getTeam = async () => {
     setLoading(true);
     try {
@@ -38,7 +41,6 @@ const Team = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
       setTeam(res?.data?.data || []);
-
       messageApi.success("Team loaded successfully!");
     } catch (error) {
       console.error(error);
@@ -48,71 +50,65 @@ const Team = () => {
     }
   };
 
-  // ✅ Add Team Member
-  const addTeamMember = async (values) => {
+  useEffect(() => {
+    getTeam();
+  }, []);
+
+  // ✅ Add or Update Team Member
+  const handleOk = async () => {
     try {
+      const values = await form.validateFields();
       setLoading(true);
 
-      // Prepare form data
       const formData = new FormData();
       formData.append("name", values.name);
       formData.append("role", values.role);
       formData.append("email", values.email);
 
-      if (values.image && values.image[0]?.originFileObj) {
-        formData.append("image", values.image[0].originFileObj);
+      const file = values.image?.[0];
+      if (file && file.originFileObj) {
+        formData.append("image", file.originFileObj);
       }
 
-      const res = await axios.post(`${BASE_URL}/api/team`, formData, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "multipart/form-data",
-        },
-      });
+      if (editingMember) {
+        // Update existing member
+        const res = await axios.patch(
+          `${BASE_URL}/api/team/${editingMember.id}`,
+          formData,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "multipart/form-data",
+            },
+          }
+        );
 
-      messageApi.success("Team member added successfully!");
-      setTeam((prev) => [res.data.data, ...prev]); // instantly update list
+        setTeam((prev) =>
+          prev.map((m) => (m.id === editingMember.id ? res.data.data : m))
+        );
+        messageApi.success("Team member updated successfully!");
+      } else {
+        // Create new member
+        const res = await axios.post(`${BASE_URL}/api/team`, formData, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "multipart/form-data",
+          },
+        });
+        setTeam((prev) => [res.data.data, ...prev]);
+        messageApi.success("Team member added successfully!");
+      }
+
       setIsModalOpen(false);
       form.resetFields();
+      setEditingMember(null);
     } catch (error) {
       console.error(error);
       messageApi.error(
-        error.response?.data?.message || "Failed to add team member"
+        error.response?.data?.message || "Something went wrong"
       );
     } finally {
       setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    getTeam();
-  }, []);
-
-  // ✅ Create or Update
-  const handleOk = async () => {
-    try {
-      const values = await form.validateFields();
-
-      if (editingMember) {
-        // You can create another function to handle edit, similar to add
-        // for now, let’s just update locally
-        const updatedMember = {
-          ...editingMember,
-          ...values,
-        };
-        setTeam((prev) =>
-          prev.map((m) => (m.id === editingMember.id ? updatedMember : m))
-        );
-        messageApi.success("Team member updated!");
-        setIsModalOpen(false);
-        form.resetFields();
-        setEditingMember(null);
-      } else {
-        // Create new team member
-        await addTeamMember(values);
-      }
-    } catch (error) {
-      console.error(error);
     }
   };
 
@@ -123,24 +119,40 @@ const Team = () => {
       name: member.name,
       role: member.role,
       email: member.email,
+      image: member.image
+        ? [
+            {
+              uid: "-1",
+              name: "current-image.jpg",
+              status: "done",
+              url: member.image?.url || member.image,
+            },
+          ]
+        : [],
     });
     setIsModalOpen(true);
   };
 
   // ✅ Delete Member
-  const handleDelete = (id) => {
-    Modal.confirm({
-      title: "Delete this member?",
-      content: "This action cannot be undone.",
-      okText: "Yes, delete",
-      okType: "danger",
-      cancelText: "Cancel",
-      onOk: () => {
-        setTeam((prev) => prev.filter((m) => m.id !== id));
-        message.success("Member deleted!");
-      },
-    });
-  };
+   const handleDelete = async (id) => {
+      setLoading(true);
+     try {
+          setLoading(true);
+          await axios.delete(`${BASE_URL}/api/team/${id}`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          setTeam((prev) => prev.filter((m) => m.id !== id));
+          messageApi.success("Member deleted successfully!");
+          getTeam()
+        } catch (error) {
+          console.error(error);
+          messageApi.error(
+            error.response?.data?.message || "Failed to delete member"
+          );
+        } finally {
+          setLoading(false);
+        }
+    };
 
   // ✅ View Member
   const handleView = (member) => setViewingMember(member);
@@ -155,6 +167,7 @@ const Team = () => {
   return (
     <div>
       {contextHolder}
+
       {/* Add Team Button */}
       <div className="flex justify-end mb-6">
         <Button
@@ -191,11 +204,20 @@ const Team = () => {
                     onClick={() => handleEdit(member)}
                     className="text-blue-500"
                   />,
-                  <DeleteOutlined
-                    key="delete"
-                    onClick={() => handleDelete(member.id)}
-                    className="text-red-500"
-                  />,
+                   <Popconfirm
+                    title="Delete this project?"
+                    description="This action cannot be undone."
+                    okText="Yes, delete"
+                    okType="danger"
+                    cancelText="Cancel"
+                    okButtonProps={{
+                      danger: true,
+                      loading: loading, // ✅ show spinner when deleting
+                    }}
+                    onConfirm={() => handleDelete(member._id)}
+                  >
+                    <DeleteOutlined />
+                  </Popconfirm>,,
                 ]}
               >
                 <div className="flex flex-col items-center">
@@ -271,19 +293,7 @@ const Team = () => {
               listType="picture-card"
               maxCount={1}
               beforeUpload={() => false}
-              defaultFileList={
-                editingMember?.image
-                  ? [
-                      {
-                        uid: "-1",
-                        name: "existing-image.jpg",
-                        status: "done",
-                        url:
-                          editingMember.image?.url || editingMember.image || "",
-                      },
-                    ]
-                  : []
-              }
+              accept="image/*"
             >
               <div>
                 <UploadOutlined />
