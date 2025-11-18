@@ -3,7 +3,7 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 const AppContext = createContext();
 
 export const AppProvider = ({ children }) => {
-  const BASE_URL = "https://veekites.onrender.com"; // ✅ your backend base URL
+  const BASE_URL = "https://veekites-v2.onrender.com"; // ✅ your backend base URL
   const [token, setToken] = useState(undefined); // undefined = still checking
   const [loading, setLoading] = useState(true);
 
